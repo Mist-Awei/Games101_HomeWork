@@ -42,15 +42,15 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 
 static bool insideTriangle(float x, float y, const Vector3f* _v)
 {   
-    //¸ø¶¨µã×ø±ê
+    //ç»™å®šç‚¹åæ ‡
     Vector3f P(x, y, 0);
-    //Çó³öÏòÁ¿AB£¬BC£¬CA
+    //æ±‚å‡ºå‘é‡ABï¼ŒBCï¼ŒCA
     Vector3f ab = _v[1] - _v[0], bc = _v[2] - _v[1], ca = _v[0] - _v[2];
-    //Çó³öÏòÁ¿AP£¬BP£¬CP
+    //æ±‚å‡ºå‘é‡APï¼ŒBPï¼ŒCP
     Vector3f ap = P - _v[0], bp = P - _v[1], cp = P - _v[2];
-    //·Ö±ğ²æ³Ë
+    //åˆ†åˆ«å‰ä¹˜
     Vector3f z1 = ab.cross(ap), z2 = bc.cross(bp), z3 = ca.cross(cp);
-    //²æ³ËÏòÁ¿·½ÏòÒ»ÖÂÔòPÔÚÈı½ÇĞÎÄÚ£¬²»Ò»ÖÂÔòÔÚÈı½ÇĞÎÍâ
+    //å‰ä¹˜å‘é‡æ–¹å‘ä¸€è‡´åˆ™Påœ¨ä¸‰è§’å½¢å†…ï¼Œä¸ä¸€è‡´åˆ™åœ¨ä¸‰è§’å½¢å¤–
     if (z1.z() > 0 && z2.z() > 0 && z3.z() > 0)
     {
         return true;
@@ -125,15 +125,15 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     auto v = t.toVector4();
 
-    //ÉèÖÃbounding box
+    //è®¾ç½®bounding box
     int x_min = std::floor(std::min(v[0].x(), std::min(v[1].x(), v[2].x())));
     int x_max = std::ceil(std::max(v[0].x(), std::max(v[1].x(), v[2].x())));
     int y_min = std::floor(std::min(v[0].y(), std::min(v[1].y(), v[2].y())));
     int y_max = std::ceil(std::max(v[0].y(), std::max(v[1].y(), v[2].y())));
 
-    // MSAA²ÉÑù
-    int pid = 0;//µ±Ç°ÏñËØµÄid
-    float z_pixel = 0;//µ±Ç°ÏñËØµÄÉî¶È
+    // MSAAé‡‡æ ·
+    int pid = 0;//å½“å‰åƒç´ çš„id
+    float z_pixel = 0;//å½“å‰åƒç´ çš„æ·±åº¦
     const float dx[5] = { 0.25,0.25,0.75,0.75,0.25 };
 
     for (int x = x_min; x <= x_max; x++)
@@ -142,34 +142,34 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
         {
             pid = get_index(x, y) * 4;
             z_pixel = 0x3f3f3f3f3f;
-            //¶ÔÃ¿¸öÑù±¾¶¼½øĞĞz-bufferËã·¨
+            //å¯¹æ¯ä¸ªæ ·æœ¬éƒ½è¿›è¡Œz-bufferç®—æ³•
             for (int k = 0; k < 4; k++)
             {
-                //ÅĞ¶ÏÏñËØÊÇ·ñÔÚÈı½ÇĞÎÖĞ
+                //åˆ¤æ–­åƒç´ æ˜¯å¦åœ¨ä¸‰è§’å½¢ä¸­
                 if (insideTriangle(x+dx[k], y+dx[k+1], t.v))
                 {
-                    //»ñÈ¡µ±Ç°ÏñËØµÄÉî¶È
+                    //è·å–å½“å‰åƒç´ çš„æ·±åº¦
                     auto tmp = computeBarycentric2D(x + dx[k], y + dx[k+1], t.v);
                     float alpha, beta, gamma;
                     std::tie(alpha, beta, gamma) = tmp;
                     float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                     float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
                     z_interpolated *= w_reciprocal;
-                    //Éî¶È¼ì²â
+                    //æ·±åº¦æ£€æµ‹
                     if (z_interpolated < depth_sample[pid + k])
                     {
-                        //¸üĞÂÑù±¾Éî¶È»º´æ
+                        //æ›´æ–°æ ·æœ¬æ·±åº¦ç¼“å­˜
                         depth_sample[pid + k] = z_interpolated;
-                        //¸üĞÂÑÕÉ«Ñù±¾»º´æ
+                        //æ›´æ–°é¢œè‰²æ ·æœ¬ç¼“å­˜
                         frame_sample[pid + k] = t.getColor() / 4;
                     }
                     z_pixel = std::min(z_pixel, depth_sample[pid + k]);
-                    //¸üĞÂÏñËØÉî¶ÈÎª×îÇ°ÃæÑù±¾µÄÉî¶È
+                    //æ›´æ–°åƒç´ æ·±åº¦ä¸ºæœ€å‰é¢æ ·æœ¬çš„æ·±åº¦
                 }
             }
-            //ÉèÖÃÏñËØÑÕÉ«
+            //è®¾ç½®åƒç´ é¢œè‰²
             Vector3f point = { float(x),float(y),z_pixel }, color = frame_sample[pid] + frame_sample[pid + 1] + frame_sample[pid + 2] + frame_sample[pid + 3];
-            depth_buf[get_index(x, y)] = z_pixel;//¸üĞÂÉî¶È»º´æ
+            depth_buf[get_index(x, y)] = z_pixel;//æ›´æ–°æ·±åº¦ç¼“å­˜
             set_pixel(point, color);
         }
     }
@@ -219,7 +219,7 @@ rst::rasterizer::rasterizer(int w, int h) : width(w), height(h)
 {
     frame_buf.resize(w * h);
     depth_buf.resize(w * h);
-    //Ã¿¸öÏñËØ·Ö³ÉËÄ¸öÑù±¾
+    //æ¯ä¸ªåƒç´ åˆ†æˆå››ä¸ªæ ·æœ¬
     frame_sample.resize(w * h * 4);
     depth_sample.resize(w * h * 4);
 }
