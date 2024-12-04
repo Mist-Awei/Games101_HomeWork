@@ -90,7 +90,7 @@ namespace rst
         std::map<int, std::vector<Eigen::Vector3i>> ind_buf;
         std::map<int, std::vector<Eigen::Vector3f>> col_buf;
 
-        //Ñù±¾Éî¶ÈºÍÑÕÉ«»º´æÁÐ±í
+        //æ ·æœ¬æ·±åº¦å’Œé¢œè‰²ç¼“å­˜åˆ—è¡¨
         std::vector<Eigen::Vector3f> frame_sample;
         std::vector<float> depth_sample;
 
